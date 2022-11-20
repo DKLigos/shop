@@ -1,0 +1,9 @@
+# Testing
+GitPython==3.1.27
+coverage==6.0
+parameterized==0.8.1
+genbadge[all]==1.0.6
+
+# Static Analysis
+flake8==3.9.2
+flake8-bugbear==21.9.2
