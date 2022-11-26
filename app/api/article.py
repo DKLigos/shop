@@ -1,7 +1,7 @@
 from select import select
 from typing import List, Optional
 
-from fastapi import Depends, APIRouter, UploadFile, File, HTTPException
+from fastapi import Depends, APIRouter, UploadFile, File, HTTPException, Form
 from pydantic import condecimal
 from sqlalchemy import select, join
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +25,7 @@ left join shop.t_file_storage tfs on tfs.id_file = talfs.id_file
 where talfs.position = 0"""
 
 
-@router.post("/get", summary='Возвращает товарные позиции')
+@router.get("/get", summary='Возвращает товарные позиции')
 async def get_article(_limit: int, _page: int, db: AsyncSession = Depends(get_db)):  # noqa: B008
     result = await db.execute("""
     select ta.id_art
@@ -47,7 +47,7 @@ async def get_article(_limit: int, _page: int, db: AsyncSession = Depends(get_db
     return result
 
 
-@router.post("/get_by_id/{id_art}", summary='Возвращает товарные позиции')
+@router.get("/get_by_id/{id_art}", summary='Возвращает товарные позиции')
 async def get_by_id(id_art: int, db: AsyncSession = Depends(get_db)):  # noqa: B008
 
     item = await crud_article.get(db=db, id_art=id_art)
@@ -96,15 +96,15 @@ async def get_by_id(id_art: int, db: AsyncSession = Depends(get_db)):  # noqa: B
 
 @router.post("/create", summary='Добавить товар')
 async def create_article(
-        name: str,
-        code: str,
-        price: condecimal(max_digits=18, decimal_places=2),
-        description: str,
-        is_active: Optional[bool],
-        files: List[UploadFile] = File(...),
+        upload_file: List[UploadFile] = File(...),
+        name: str = Form(...),
+        price: float = Form(...),
+        code: str = Form(...),
+        description: str = Form(...),
+        is_active: bool = Form(...),
         db: AsyncSession = Depends(get_db)):
     id_fiels = []
-    for item in files:
+    for item in upload_file:
         file_signature = SignerFileUpload(item, const.ALLOW_PICTURE_FORMATS)
         file_signature = await file_signature.save_in_database(db)
         id_fiels.append({'id_file': file_signature.id_file})
