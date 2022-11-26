@@ -26,19 +26,22 @@ where talfs.position = 0"""
 
 
 @router.post("/get", summary='Возвращает товарные позиции')
-async def get_article(db: AsyncSession = Depends(get_db)):  # noqa: B008
-    result = await db.execute(select(Article.id_art
-                                     , Article.name
-                                     , Article.code
-                                     , Article.price
-                                     , Article.is_active
-                                     , Article.description
-                                     , FileStorage.url.label("img")
-                                     , FileStorage.id_file)
-                              .select_from(
-        join(Article, ArticleLinkFileStorage, Article.id_art == ArticleLinkFileStorage.id_art))
-                              .join(FileStorage, ArticleLinkFileStorage.id_file == FileStorage.id_file)
-                              .filter(ArticleLinkFileStorage.position == 0))
+async def get_article(_limit: int, _page: int, db: AsyncSession = Depends(get_db)):  # noqa: B008
+    result = await db.execute("""
+    select ta.id_art
+           , ta.name
+           , ta.code
+           , ta.price
+           , ta.description
+           , ta.is_active
+           , tfs.url as img
+           , tfs.id_file
+    from shop.t_article ta
+    join shop.t_article_link_file_storage talfs on ta.id_art = talfs.id_art
+    join shop.t_file_storage tfs on talfs.id_file = tfs.id_file
+    where position = 0
+    LIMIT :_limit OFFSET :_page
+    """, {"_limit": _limit, "_page": _page})
     result = result.fetchall()
 
     return result
