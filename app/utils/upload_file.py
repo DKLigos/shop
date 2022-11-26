@@ -55,9 +55,11 @@ class FileUpload(Uploader):
 
     async def save_in_database(self, db: AsyncSession, verbose_name_file=None) -> FileStorage:
         await self.upload_in_storage()
+        name =  self.get_verbose_name_with_format(verbose_name_file) or self.file_name
         file = await crud_file_storage.create(db, obj_in={
             'name_file': self.get_verbose_name_with_format(verbose_name_file) or self.file_name,
-            'full_path': self.full_path_without_root_prefix
+            'full_path': self.full_path_without_root_prefix,
+            'url': settings.URL + '/img/' + name
         })
         return file
 

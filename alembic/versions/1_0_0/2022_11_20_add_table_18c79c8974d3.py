@@ -1,8 +1,8 @@
 """add table
 
-Revision ID: be83518053cf
+Revision ID: 18c79c8974d3
 Revises: 
-Create Date: 2022-11-19 18:43:17.199850
+Create Date: 2022-11-20 11:55:04.787543
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'be83518053cf'
+revision = '18c79c8974d3'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -33,6 +33,7 @@ def upgrade():
     sa.Column('id_file', sa.Integer(), nullable=False, comment='ID'),
     sa.Column('name_file', sa.String(length=100), nullable=False, comment='Имя файла'),
     sa.Column('full_path', sa.String(length=255), nullable=False, comment='Путь к файлу'),
+    sa.Column('url', sa.String(), nullable=False, comment='Путь к файлу'),
     sa.PrimaryKeyConstraint('id_file', name=op.f('pk_t_file_storage')),
     schema='shop',
     comment='Хранилище файлов'

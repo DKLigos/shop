@@ -5,7 +5,7 @@ from pydantic import BaseModel
 class FileStorageBase(BaseModel):
     name_file: str
     full_path: str
-
+    url: str
 
 class FileStorageCreate(FileStorageBase):
     pass

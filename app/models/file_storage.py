@@ -9,3 +9,4 @@ class FileStorage(Base):
     id_file = Column(Integer, primary_key=True, index=True, comment="ID")
     name_file = Column(String(100), nullable=False, comment="Имя файла")
     full_path = Column(String(255), nullable=False, comment="Путь к файлу")
+    url = Column(String(), nullable=False, comment="Путь к файлу")

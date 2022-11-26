@@ -33,7 +33,7 @@ async def get_article(db: AsyncSession = Depends(get_db)):  # noqa: B008
                                      , Article.price
                                      , Article.is_active
                                      , Article.description
-                                     , FileStorage.full_path.label("img")
+                                     , FileStorage.url.label("img")
                                      , FileStorage.id_file)
                               .select_from(
         join(Article, ArticleLinkFileStorage, Article.id_art == ArticleLinkFileStorage.id_art))
@@ -58,7 +58,7 @@ async def get_by_id(id_art: int, db: AsyncSession = Depends(get_db)):  # noqa: B
                                      , Article.is_active
                                      , Article.description
                                      , ArticleLinkFileStorage.position
-                                     , FileStorage.full_path
+                                     , FileStorage.url
                                      , FileStorage.id_file)
                               .select_from(
         join(Article, ArticleLinkFileStorage, Article.id_art == ArticleLinkFileStorage.id_art))
@@ -73,10 +73,10 @@ async def get_by_id(id_art: int, db: AsyncSession = Depends(get_db)):  # noqa: B
             arts.append(item)
         if art_image.get(item.id_art):
             new_art = art_image.get(item.id_art)
-            new_art[item.position] = item.full_path
+            new_art[item.position] = item.url
             art_image.update({item.id_art: new_art})
         else:
-            art_image.update({item.id_art: {item.position: item.full_path}})
+            art_image.update({item.id_art: {item.position: item.url}})
     for art in arts:
         right_result.append({
             'id_art': art.id_art,
