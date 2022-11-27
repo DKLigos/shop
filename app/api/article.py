@@ -123,7 +123,7 @@ async def create_article(
     }
     article = await crud_article.create_from_data(db, obj_in_data=data)
 
-    for idx, item in id_fiels:
+    for idx, item in enumerate(id_fiels):
         art_link = ArticleLinkFileStorage(**{
             'id_art': article.id_art,
             'id_file': item.get('id_file'),
