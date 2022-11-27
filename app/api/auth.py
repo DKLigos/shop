@@ -25,10 +25,10 @@ async def create_user(item: UserCreate, db: AsyncSession = Depends(get_db)):
 async def login(item: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
     user = await crud_user.get(db, User.username == item.username)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Неверный логин или пароль")
 
     if not Hash.verify(user.password, item.password):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Неверный логин или пароль")
 
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}

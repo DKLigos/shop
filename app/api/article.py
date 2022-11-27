@@ -9,12 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.const import const
 from app.deps.db_deps import get_db
 from app.models import Article, ArticleLinkFileStorage, FileStorage
-from app.schemas import ArticlesRemove
+from app.schemas import ArticlesRemove, User
 
 from app.crud.crud_article import article as crud_article
 from app.crud.crud_file_storage import file_storage as crud_file_storage
 from app.crud.crud_article_link_file_storage import article_link_file_storage as crud_article_link_file_storage
 from app.utils import delete_file
+from app.utils.oauth import get_current_user
 from app.utils.upload_file import SignerFileUpload
 
 router = APIRouter(prefix='/article', tags=['Товарные позиции [article]'])
@@ -102,6 +103,7 @@ async def create_article(
         code: str = Form(...),
         description: str = Form(...),
         is_active: bool = Form(...),
+        current_user: User = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)):
     id_fiels = []
     for item in upload_file:
@@ -113,7 +115,7 @@ async def create_article(
 
     if check_unique:
         raise HTTPException(status_code=422,
-                            detail="Такой артикль уже существует!")
+                            detail="Артикль уже существует!")
     data = {
         'name': name,
         'code': code,
@@ -135,8 +137,75 @@ async def create_article(
     return True
 
 
+@router.post("/update/{id_art}", summary='Добавить товар')
+async def update_article(
+        id_art: int,
+        upload_file: Optional[List[UploadFile]] = File(...),
+        name: str = Form(...),
+        price: float = Form(...),
+        code: str = Form(...),
+        description: str = Form(...),
+        is_active: bool = Form(...),
+        is_update_photo: bool = Form(...),
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)):
+    id_fiels = []
+    check_unique = await crud_article.get(db, Article.id_art == id_art)
+
+    if not check_unique:
+        raise HTTPException(status_code=422,
+                            detail="Данных не существует")
+
+    if is_update_photo:
+        list_remove = await db.execute(select(FileStorage.full_path, FileStorage.id_file)
+                                       .select_from(
+            join(ArticleLinkFileStorage, FileStorage, ArticleLinkFileStorage.id_file == FileStorage.id_file))
+                                       .filter(ArticleLinkFileStorage.id_art == id_art))
+        list_remove = list_remove.fetchall()
+        id_files = [item.id_file for item in list_remove]
+        for item in list_remove:
+            delete_file.delete_file_from_uploads(item.full_path)
+
+        await crud_article_link_file_storage.remove(db, ArticleLinkFileStorage.id_file.in_(id_files))
+        await crud_file_storage.remove(db, FileStorage.id_file.in_(id_files))
+
+        for item in upload_file:
+            file_signature = SignerFileUpload(item, const.ALLOW_PICTURE_FORMATS)
+            file_signature = await file_signature.save_in_database(db)
+            id_fiels.append({'id_file': file_signature.id_file})
+
+        article = await crud_article.update_multi(db, Article.id_art == id_art, values={
+            'name': name,
+            'code': code,
+            'price': price,
+            'description': description,
+            'is_active': is_active,
+        })
+
+        for idx, item in enumerate(id_fiels):
+            art_link = ArticleLinkFileStorage(**{
+                'id_art': id_art,
+                'id_file': item.get('id_file'),
+                'position': idx
+            })
+            db.add(art_link)
+            await db.commit()
+    else:
+        await crud_article.update_multi(db, Article.id_art == id_art, values={
+            'name': name,
+            'code': code,
+            'price': price,
+            'description': description,
+            'is_active': is_active,
+        })
+    await db.commit()
+
+    return True
+
+
 @router.post("/remove", summary='Удалить товары')
-async def remove_article(ids: ArticlesRemove, db: AsyncSession = Depends(get_db)):
+async def remove_article(ids: ArticlesRemove, current_user: User = Depends(get_current_user),
+                         db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(FileStorage.full_path, FileStorage.id_file)
                               .select_from(
         join(ArticleLinkFileStorage, FileStorage, ArticleLinkFileStorage.id_file == FileStorage.id_file))
