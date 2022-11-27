@@ -113,7 +113,7 @@ async def create_article(
 
     if check_unique:
         raise HTTPException(status_code=422,
-                            detail="Периоды действия доверенности пересекаются!")
+                            detail="Такой артикль уже существует!")
     data = {
         'name': name,
         'code': code,
@@ -123,11 +123,11 @@ async def create_article(
     }
     article = await crud_article.create_from_data(db, obj_in_data=data)
 
-    for item in id_fiels:
+    for idx, item in id_fiels:
         art_link = ArticleLinkFileStorage(**{
             'id_art': article.id_art,
             'id_file': item.get('id_file'),
-            'position': item.get('id_file')
+            'position': idx
         })
         db.add(art_link)
     await db.commit()
